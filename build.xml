@@ -1,0 +1,5 @@
+<build>
+
+    <flag output="build/fileshare"/>
+
+</build>
