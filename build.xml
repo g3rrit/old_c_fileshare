@@ -6,7 +6,7 @@
 
     <source value="src/main.c"/>
     <source value="src/tcp.c"/>
-    <source value="src/hash.c"/>
+    <source value="src/aes.c"/>
     <source value="src/util.c"/>
 
 </build>

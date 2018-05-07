@@ -13,6 +13,8 @@
 
 int host_connection(int *m_socket, int *c_socket, char *port)
 {
+    printf("hosting connection on port %s\n", port);
+
     int reuseaddr = 0;
     struct sockaddr_in6 addr;
 
@@ -25,7 +27,11 @@ int host_connection(int *m_socket, int *c_socket, char *port)
         return 0;
     }
 
-    setsockopt(*m_socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
+    if(setsockopt(*m_socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr)) == -1)
+    {
+        printf("error setting socket options\n");
+        return 0;
+    }
 
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(atoi(port));
@@ -130,7 +136,7 @@ int recv_header(int s, struct header *h)
     return recv_bytes;
 }
 
-int send_file(int s, char *url, int encryption)
+int send_file(int s, char *url, uint32_t key)
 {
     FILE *file = fopen(url, "rb");
 
@@ -148,7 +154,7 @@ int send_file(int s, char *url, int encryption)
     printf("sent: 0|%i", h.size);
 
 #define BUFFER_SIZE 1024
-    char *buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
 
     int total_bytes = 0;
@@ -157,7 +163,7 @@ int send_file(int s, char *url, int encryption)
     while((read_size = fread(buffer, 1, BUFFER_SIZE, file)) > 0)
     {
         //encrypt buffer
-         
+        //AES_CBC_encrypt_buffer(ctx, buffer, BUFFER_SIZE);
         //
 
         int sent_bytes = 0;
@@ -188,7 +194,7 @@ int send_file(int s, char *url, int encryption)
     return read_size;
 }
 
-int recv_file(int s, char *url, int encryption)
+int recv_file(int s, char *url, uint32_t key)
 {
     FILE *file = fopen(url, "wb");
 
@@ -206,27 +212,34 @@ int recv_file(int s, char *url, int encryption)
     printf("received: 0|%i", h.size);
 
 #define BUFFER_SIZE 1024
-    char *buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
+
+    int block_count = h.size/BUFFER_SIZE;
+    int last_block_size = h.size % BUFFER_SIZE;
+    block_count += last_block_size > 0 ? 1 : 0;
 
     int total_bytes = 0;
 
     int bytes = 0;
+    int recv_bytes = 0;
     do
     {
-        bytes = recv(s, buffer, BUFFER_SIZE, 0);
+        bytes = recv(s, buffer + recv_bytes, BUFFER_SIZE - recv_bytes, 0);
+        recv_bytes += bytes;
 
-        if(bytes > 0)
+        if(bytes > 0 && recv_bytes == BUFFER_SIZE || (block_count == 1 && recv_bytes == last_block_size))
         {
             //decrpyt buffer
-
+            //AES_CBC_decrypt_buffer(ctx, buffer, BUFFER_SIZE);             
             //
 
+            fwrite(buffer, 1, recv_bytes, file);
 
-            fwrite(buffer, 1, bytes, file);
+            memset(buffer, 0, BUFFER_SIZE);
+            block_count--;
+            recv_bytes = 0;
         }
-
-        memset(buffer, 0, BUFFER_SIZE);
 
         total_bytes += bytes;
 

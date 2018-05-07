@@ -1,10 +1,16 @@
 #include <stdio.h>
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "tcp.h"
+#include "aes.h"
 
 int main(int argc, char **argv)
 {
 #define print_usage() printf("usage: -h port | -c xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxxx::port\n       -s file.txt | -r file.txt\n       -x keyfile.txt\n");
+
+    uint8_t key[128];
 
     if(argc < 4)
     {
