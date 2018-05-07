@@ -136,7 +136,7 @@ int recv_header(int s, struct header *h)
     return recv_bytes;
 }
 
-int send_file(int s, char *url, uint32_t key)
+int send_file(int s, char *url, uint8_t *key)
 {
     FILE *file = fopen(url, "rb");
 
@@ -163,7 +163,7 @@ int send_file(int s, char *url, uint32_t key)
     while((read_size = fread(buffer, 1, BUFFER_SIZE, file)) > 0)
     {
         //encrypt buffer
-        //AES_CBC_encrypt_buffer(ctx, buffer, BUFFER_SIZE);
+        encrypt(buffer, read_size, key);
         //
 
         int sent_bytes = 0;
@@ -194,7 +194,7 @@ int send_file(int s, char *url, uint32_t key)
     return read_size;
 }
 
-int recv_file(int s, char *url, uint32_t key)
+int recv_file(int s, char *url, uint8_t *key)
 {
     FILE *file = fopen(url, "wb");
 
@@ -231,7 +231,7 @@ int recv_file(int s, char *url, uint32_t key)
         if(bytes > 0 && recv_bytes == BUFFER_SIZE || (block_count == 1 && recv_bytes == last_block_size))
         {
             //decrpyt buffer
-            //AES_CBC_decrypt_buffer(ctx, buffer, BUFFER_SIZE);             
+            decrypt(buffer, recv_bytes, key);
             //
 
             fwrite(buffer, 1, recv_bytes, file);
