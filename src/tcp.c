@@ -136,7 +136,7 @@ int recv_header(int s, struct header *h)
     return recv_bytes;
 }
 
-int send_file(int s, char *url, uint8_t *key)
+int send_file(int s, char *url)
 {
     FILE *file = fopen(url, "rb");
 
@@ -163,7 +163,7 @@ int send_file(int s, char *url, uint8_t *key)
     while((read_size = fread(buffer, 1, BUFFER_SIZE, file)) > 0)
     {
         //encrypt buffer
-        encrypt(buffer, read_size, key);
+        encrypt(buffer, read_size);
         //
 
         int sent_bytes = 0;
@@ -194,7 +194,7 @@ int send_file(int s, char *url, uint8_t *key)
     return read_size;
 }
 
-int recv_file(int s, char *url, uint8_t *key)
+int recv_file(int s, char *url)
 {
     FILE *file = fopen(url, "wb");
 
@@ -231,7 +231,7 @@ int recv_file(int s, char *url, uint8_t *key)
         if(bytes > 0 && recv_bytes == BUFFER_SIZE || (block_count == 1 && recv_bytes == last_block_size))
         {
             //decrpyt buffer
-            decrypt(buffer, recv_bytes, key);
+            decrypt(buffer, BUFFER_SIZE);
             //
 
             fwrite(buffer, 1, recv_bytes, file);

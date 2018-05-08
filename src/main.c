@@ -4,35 +4,17 @@
 #include <string.h>
 
 #include "tcp.h"
-
-uint8_t std_key[] = {
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    8, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    9, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    9, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211,
-    4, 234, 133, 23, 213, 14, 5, 200, 164, 123, 143, 25, 73, 78, 53, 211
-};
+#include "crypto.h"
 
 int main(int argc, char **argv)
 {
-#define print_usage() printf("usage: -h port | -c xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxxx::port\n       -s file.txt | -r file.txt\n       -x keyfile.txt\n");
+#define print_usage() printf("usage: -h port | -c xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxxx::port\n       -s file.txt | -r file.txt\n       -x key(max 16 bit)\n");
 
 
     if(argc == 7)
     {
         printf("key: %s\n",argv[6]);
-        uint8_t *key_p = std_key;
-        int offset = sizeof(std_key) / strlen(argv[6]);
-        for(int i = 0; i < strlen(argv[6]); i++)
-        {
-            *key_p = argv[6][i];
-            key_p += offset;
-        }
+        set_key(argv[6], strlen(argv[6]));
     }
 
     if(argc < 4)
@@ -64,11 +46,11 @@ int main(int argc, char **argv)
     //send or receive file
     if(argv[3][1] == 's')
     {
-        send_file(c_socket, argv[4], std_key);
+        send_file(c_socket, argv[4]);
     }
     else if(argv[3][1] == 'r')
     {
-        recv_file(c_socket, argv[4], std_key);
+        recv_file(c_socket, argv[4]);
     }
     else 
         goto cleanup;
