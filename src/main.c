@@ -6,6 +6,11 @@
 #include "tcp.h"
 #include "crypto.h"
 
+#ifdef _WIN32
+#include "winsock2.h"
+#include "windows.h"
+#endif
+
 int main(int argc, char **argv)
 {
 #define print_usage() printf("usage: -h port | -c xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxxx::port\n       -s file.txt | -r file.txt\n       -x key(max 16 bit)\n");
@@ -22,6 +27,18 @@ int main(int argc, char **argv)
         print_usage();
         return 0;
     }
+
+#ifdef WIN32
+    WSADATA wsa_data;
+
+    int error = 0;
+    error = WSAStartup(MAKEWORD(2,2), &wsa_data);
+    if(error < 0)
+    {
+        printf("WSAStartup failed with %i\n", error);
+        return 0;
+    }
+#endif
 
     int m_socket = 0;
     int c_socket = 0;

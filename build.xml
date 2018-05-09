@@ -1,13 +1,32 @@
 <build>
 
-    <flag output="build/fileshare"/>
+    <target value="linux">
+        <flag output="build/fileshare"/>
 
-    <flag include="include"/>
+        <flag include="include"/>
 
-    <source value="src/main.c"/>
-    <source value="src/tcp.c"/>
-    <source value="src/crypto.c"/>
-    <source value="src/aes.c"/>
-    <source value="src/util.c"/>
+        <source value="src/main.c"/>
+        <source value="src/tcp.c"/>
+        <source value="src/crypto.c"/>
+        <source value="src/aes.c"/>
+        <source value="src/util.c"/>
+    </target>
+
+    <target value="windows">
+        <flag output="build/fileshare.exe"/>
+
+        <flag include="include"/>
+
+        <flag link="Ws2_32"/>
+        <flag link="Mswsock"/>
+        <flag link="AdvApi32"/>
+
+        <source value="src/main.c"/>
+        <source value="src/tcp.c"/>
+        <source value="src/crypto.c"/>
+        <source value="src/aes.c"/>
+        <source value="src/util.c"/>
+
+    </target>
 
 </build>

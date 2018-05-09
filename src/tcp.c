@@ -3,11 +3,21 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include "windows.h"
+#include "winsock2.h"
+#include "mstcpip.h"
+#include "ws2tcpip.h"
+#define inet_pton(...) InetPton(__VA_ARGS__)
+#else
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unistd.h>
+#endif
 
 #include "util.h"
 
@@ -83,8 +93,9 @@ int connect_to_host(int *c_socket, char *ip6, char *port)
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(atoi(port));
 
-    inet_pton(AF_INET6, "::1", &addr.sin6_addr);    //::1 is ipv6 loopback
-    //inet_pton(AF_INET6, ip6, &addr.sin6_addr);
+    //inet_pton(AF_INET6, "::1", &addr.sin6_addr);    //::1 is ipv6 loopback
+    inet_pton(AF_INET6, ip6, &addr.sin6_addr);
+    //RtlIpv6StringToAddress(ip6, term, &addr.sin6_addr);
 
     if(connect(*c_socket, (struct sockaddr*) &addr, sizeof(addr)) == -1)
     {
@@ -157,6 +168,8 @@ int send_file(int s, char *url)
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
 
+    int crypt_size = ((float)h.size/1024.f) - h.size/1024 > 0 ? ((h.size/1024) + 1) * BUFFER_SIZE : (h.size/1024) * BUFFER_SIZE;
+
     int total_bytes = 0;
 
     int read_size = 0;
@@ -168,9 +181,9 @@ int send_file(int s, char *url)
 
         int sent_bytes = 0;
         int bytes = 0;
-        while(sent_bytes < read_size)
+        while(sent_bytes < BUFFER_SIZE)
         {
-            bytes = write(s, buffer + sent_bytes, read_size - sent_bytes);
+            bytes = write(s, buffer + sent_bytes, BUFFER_SIZE - sent_bytes);
 
             if(bytes < 0)
             {
@@ -183,7 +196,7 @@ int send_file(int s, char *url)
 
             sent_bytes += bytes;
 
-            printf("\rsent: %i|%i", sent_bytes, h.size);
+            printf("\rsent: %i|%i", sent_bytes, crypt_size);
         }
 
         memset(buffer, 0, BUFFER_SIZE);
@@ -228,20 +241,27 @@ int recv_file(int s, char *url)
         bytes = recv(s, buffer + recv_bytes, BUFFER_SIZE - recv_bytes, 0);
         recv_bytes += bytes;
 
-        if(bytes > 0 && recv_bytes == BUFFER_SIZE || (block_count == 1 && recv_bytes == last_block_size))
+        if(bytes > 0 && recv_bytes == BUFFER_SIZE)
         {
             //decrpyt buffer
             decrypt(buffer, BUFFER_SIZE);
             //
 
-            fwrite(buffer, 1, recv_bytes, file);
+            if(block_count != 1)
+            {
+                total_bytes += recv_bytes;
+                fwrite(buffer, 1, recv_bytes, file);
+            }
+            else
+            {
+                total_bytes += last_block_size;
+                fwrite(buffer, 1, last_block_size, file);
+            }
 
             memset(buffer, 0, BUFFER_SIZE);
             block_count--;
             recv_bytes = 0;
         }
-
-        total_bytes += bytes;
 
         printf("\rreceived: %i|%i", total_bytes, h.size);
 
