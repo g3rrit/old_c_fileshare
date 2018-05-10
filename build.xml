@@ -20,6 +20,7 @@
         <flag link="Ws2_32"/>
         <flag link="Mswsock"/>
         <flag link="AdvApi32"/>
+        <flag link="nll">
 
         <source value="src/main.c"/>
         <source value="src/tcp.c"/>
