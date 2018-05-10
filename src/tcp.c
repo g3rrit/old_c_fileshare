@@ -25,35 +25,48 @@ int host_connection(int *m_socket, int *c_socket, char *port)
 {
     printf("hosting connection on port %s\n", port);
 
-    int reuseaddr = 0;
-    struct sockaddr_in6 addr;
+    int rc = 0;
 
-    *m_socket = socket(AF_INET6, SOCK_STREAM, 0);
+    struct addrinfo hints;
+    struct addrinfo *res = 0;
+    struct addrinfo *ptr = 0;
 
-    if(*m_socket == -1)
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET6;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    rc = getaddrinfo(0, port, &hints, &res);
+
+    if(rc != 0)
+    {
+        printf("error getting address info\n");
+        return 0;
+    }
+
+    ptr = res;
+
+    *m_socket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+
+    if(*m_socket < 0)
     {
         printf("error opening socket\n");
-        *m_socket = 0;
+
         return 0;
     }
 
-    if(setsockopt(*m_socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr)) == -1)
+    rc = bind(*m_socket, ptr->ai_addr, ptr->ai_addrlen);
+
+    if(rc == -1)
     {
-        printf("error setting socket options\n");
+        printf("eror binding socket\n");
         return 0;
     }
 
-    addr.sin6_family = AF_INET6;
-    addr.sin6_port = htons(atoi(port));
-    addr.sin6_addr = in6addr_any;
+    rc = listen(*m_socket, 2);
 
-    if(bind(*m_socket, (struct sockaddr*) &addr, sizeof(addr)) == -1)
-    {
-        printf("error binding socket\n");
-        return 0;
-    }
-
-    if(listen(*m_socket, 2) == -1)
+    if(rc == -1)
     {
         printf("error listening on socket\n");
         return 0;
@@ -77,11 +90,50 @@ int host_connection(int *m_socket, int *c_socket, char *port)
 
 int connect_to_host(int *c_socket, char *ip6, char *port)
 {
-    struct sockaddr_in6 addr;
-
     printf("trying to connect to %s on port %s\n", ip6, port);
 
-    *c_socket = socket(AF_INET6, SOCK_STREAM, 0);
+    struct addrinfo hints;
+    struct addrinfo *res;
+    struct addrinfo *ptr;
+
+    struct sockaddr_in6 addr;
+
+    int rc = 0;
+
+    memset(&hints, 0 , sizeof(hints));
+    memset(&addr, 0, sizeof(addr));
+
+    hints.ai_family = AF_INET6;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+
+    rc = getaddrinfo(ip6, 0, &hints, &res);
+
+    if(rc != 0)
+    {
+        printf("error getting address info\n");
+        return 0;
+    }
+
+    ptr = res;
+
+    while(res)
+    {
+        if(res->ai_family == AF_INET6)
+        {
+            memcpy(&addr, res->ai_addr, res->ai_addrlen);
+
+            addr.sin6_port = htons(atoi(port));
+            addr.sin6_family = AF_INET6;
+            
+            break;
+        }
+
+        res = res->ai_next;
+    }
+
+
+    *c_socket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
     if(*c_socket == -1)
     {
@@ -90,18 +142,13 @@ int connect_to_host(int *c_socket, char *ip6, char *port)
         return 0;
     }
 
-    addr.sin6_family = AF_INET6;
-    addr.sin6_port = htons(atoi(port));
-
-    //inet_pton(AF_INET6, "::1", &addr.sin6_addr);    //::1 is ipv6 loopback
-    inet_pton(AF_INET6, ip6, &addr.sin6_addr);
-    //RtlIpv6StringToAddress(ip6, term, &addr.sin6_addr);
-
     if(connect(*c_socket, (struct sockaddr*) &addr, sizeof(addr)) == -1)
     {
         printf("error connection to server\n");
         return 0;
     }
+
+    freeaddrinfo(ptr);
 
     printf("connection established\n");
 
