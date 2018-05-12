@@ -9,6 +9,7 @@
 #ifdef _WIN32
 #include "winsock2.h"
 #include "windows.h"
+#define close(s) closesocket(s)
 #endif
 
 int main(int argc, char **argv)
@@ -53,7 +54,6 @@ int main(int argc, char **argv)
     {
         argv[2][39] = 0;
         argv[2][40] = 0;
-        printf("test ip: %s port: %s\n", argv[2], argv[2] + 41);
         if(!connect_to_host(&c_socket, argv[2], argv[2] + 41))
             goto cleanup;
     }

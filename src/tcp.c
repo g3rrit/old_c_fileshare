@@ -13,6 +13,7 @@
 #include "mstcpip.h"
 #include "ws2tcpip.h"
 #define inet_pton(...) InetPton(__VA_ARGS__)
+#define close(s) closesocket(s)
 #else
 #include <sys/socket.h>
 #include <netdb.h>
@@ -90,7 +91,7 @@ int host_connection(int *m_socket, int *c_socket, char *port)
 
 int connect_to_host(int *c_socket, char *ip6, char *port)
 {
-    printf("trying to connect to %s on port %s\n", ip6, port);
+    printf("trying to connect to %s on port %s...\n", ip6, port);
 
     struct addrinfo hints;
     struct addrinfo *res;
@@ -242,8 +243,9 @@ int send_file(int s, char *url)
                 break;
 
             sent_bytes += bytes;
+            total_bytes += bytes;
 
-            printf("\rsent: %i|%i", sent_bytes, crypt_size);
+            printf("\rsent: %i|%i", total_bytes, crypt_size);
         }
 
         memset(buffer, 0, BUFFER_SIZE);
