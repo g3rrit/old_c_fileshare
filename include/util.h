@@ -2,7 +2,8 @@
 #define UTIL_H
 
 #include <stdio.h>
+#include <stdint.h>
 
-int get_file_size(FILE *file);
+uint64_t get_file_size(FILE *file);
 
 #endif

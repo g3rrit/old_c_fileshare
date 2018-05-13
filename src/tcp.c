@@ -160,7 +160,7 @@ int connect_to_host(int *c_socket, char *ip6, char *port)
 
 struct header
 {
-    uint32_t size;
+    uint64_t size;
 };
 
 int send_header(int s, struct header *h)
